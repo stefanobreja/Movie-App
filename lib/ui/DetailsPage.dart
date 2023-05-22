@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:movie/Constants.dart';
+import 'package:movie/data/MovieDb.dart';
+import 'package:movie/data/MoviesDb.dart';
 import 'package:movie/model/Credits.dart';
 import 'package:movie/model/Movie.dart';
 import 'package:movie/ui/PersonDetailsPage.dart';
@@ -24,17 +26,42 @@ class DetailsPage extends StatefulWidget {
 }
 
 class _DetailsPage extends State<DetailsPage> {
+  var isLoading = false;
+  var isFavorite = false;
+  var favoriteIcon = const Icon(
+    CupertinoIcons.heart_fill,
+    size: 40,
+  );
+
   late Future<Credits?> credits;
 
   @override
   void initState() {
+    setLoadingState(true);
+    getMovieFromDb();
     credits = loadCast();
+    setLoadingState(false);
     super.initState();
+  }
+
+  getMovieFromDb() async {
+    var movie = widget.detailsPageArguments.movie;
+    if (movie != null) {
+      var movieId = movie.id;
+      await MoviesDb.instance.getMovie(movieId!).then((value) {
+        if (value.id == movieId) {
+          setFavoriteState(true);
+        } else {
+          setFavoriteState(false);
+        }
+      });
+    }
   }
 
   Future<Credits?> loadCast() async {
     var movie = widget.detailsPageArguments.movie;
     var movieId = movie?.id;
+
     TMDB tmdb = TMDB(
       ApiKeys(Constants.dbApiKey, Constants.dbApiReadingAccessToken),
       logConfig: const ConfigLogger(
@@ -63,21 +90,34 @@ class _DetailsPage extends State<DetailsPage> {
           width: 70,
           child: FloatingActionButton.small(
             onPressed: () {
-              addToFavorites();
+              addOrRemoveFromFavorites(movie);
             },
             backgroundColor: Colors.blueGrey,
-            child: const Icon(
-              CupertinoIcons.heart_circle,
-              size: 40,
-            ),
+            child: favoriteIcon,
           ),
         ),
         body: SingleChildScrollView(
-          child: Column(
+          child: Stack(
             children: [
-              Column(
-                children: [image(movie?.backdropPath), detailsSection()],
+              Container(
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    Column(
+                      children: [image(movie?.backdropPath), detailsSection()],
+                    ),
+                  ],
+                ),
               ),
+              Container(
+                  alignment: Alignment.center,
+                  child: Visibility(
+                    visible: isLoading,
+                    child: const Center(
+                        heightFactor: 25,
+                        widthFactor: 25,
+                        child: CircularProgressIndicator()),
+                  ))
             ],
           ),
         ),
@@ -153,7 +193,7 @@ class _DetailsPage extends State<DetailsPage> {
         style: const TextStyle(fontSize: 16),
       );
     } else {
-      return const Text("");
+      return const Text("No movies here yet");
     }
   }
 
@@ -206,10 +246,7 @@ class _DetailsPage extends State<DetailsPage> {
             ],
           );
         } else {
-          return const Center(
-              heightFactor: 25,
-              widthFactor: 25,
-              child: CircularProgressIndicator());
+          return const Text("");
         }
       },
     );
@@ -288,12 +325,54 @@ class _DetailsPage extends State<DetailsPage> {
     );
   }
 
-  addToFavorites() async {}
+  addOrRemoveFromFavorites(Movie? movie) async {
+    if (movie != null) {
+      var movieId = movie.id;
+      setLoadingState(true);
+      if (!isFavorite) {
+        await MoviesDb.instance.create(Movie.toMovieDb(movie)).then((value) {
+          setFavoriteState(true);
+        });
+      } else {
+        await MoviesDb.instance.remove(movieId!).then((value) {
+          setFavoriteState(false);
+        });
+      }
+      setLoadingState(false);
+    }
+  }
+
+  void setLoadingState(bool loading) {
+    setState(() {
+      isLoading = loading;
+    });
+  }
 
   void openPersonDetails(List<Cast> casts) {
     Navigator.push(
         context,
         MaterialPageRoute(
             builder: (context) => PersonsDetailsPage(casts: casts)));
+  }
+
+  Icon getFavoriteIcon() {
+    if (isFavorite) {
+      return const Icon(
+        CupertinoIcons.heart_slash_fill,
+        size: 40,
+      );
+    } else {
+      return const Icon(
+        CupertinoIcons.heart_fill,
+        size: 40,
+      );
+    }
+  }
+
+  void setFavoriteState(bool isFavorite) {
+    setState(() {
+      this.isFavorite = isFavorite;
+      favoriteIcon = getFavoriteIcon();
+    });
   }
 }

@@ -1,3 +1,5 @@
+import 'package:movie/data/MovieDb.dart';
+
 class Movie {
   Movie({
     required this.backdropPath,
@@ -41,5 +43,17 @@ class Movie {
     data['vote_average'] = voteAverage;
     data['vote_count'] = voteCount;
     return data;
+  }
+
+  static MovieDb toMovieDb(Movie movie) {
+    return MovieDb(
+        id: movie.id,
+        releaseDate: movie.releaseDate,
+        title: movie.title,
+        voteAverage: movie.voteAverage,
+        voteCount: movie.voteCount,
+        overview: movie.overview,
+        backdropPath: movie.backdropPath,
+        posterPath: movie.posterPath);
   }
 }

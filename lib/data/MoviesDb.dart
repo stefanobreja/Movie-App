@@ -28,7 +28,7 @@ class MoviesDb {
     const realType = 'REAL';
     const textType = 'TEXT';
 
-    await db.execute('''CREATE TABEL [IF NOT EXISTS] $tableMovies (
+    await db.execute('''CREATE TABLE $tableMovies(
     ${MovieDbFields.id} $idType,
     ${MovieDbFields.title} $textType,
     ${MovieDbFields.overview} $textType,
@@ -37,7 +37,7 @@ class MoviesDb {
     ${MovieDbFields.backdropPath} $textType,
     ${MovieDbFields.voteAverage} $realType,
     ${MovieDbFields.voteCount} $intType
-    ''');
+    )''');
   }
 
   Future close() async {
@@ -51,12 +51,26 @@ class MoviesDb {
     return movie.copy(id: id);
   }
 
+  Future<bool> remove(int id) async {
+    final db = await instance.database;
+    await db.delete(
+      tableMovies,
+      where: '${MovieDbFields.id} == ?',
+      whereArgs: [id],
+    ).then((value) {
+      if (value >= 1) {
+        return true;
+      }
+    });
+    return false;
+  }
+
   Future<MovieDb> getMovie(int id) async {
     final db = await instance.database;
     final mapsResponse = await db.query(
       tableMovies,
       columns: MovieDbFields.values,
-      where: '${MovieDbFields.id}==?',
+      where: '${MovieDbFields.id} == ?',
       whereArgs: [id],
     );
     if (mapsResponse.isNotEmpty) {
