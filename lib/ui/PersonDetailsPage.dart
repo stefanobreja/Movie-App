@@ -68,20 +68,6 @@ class _PersonDetailsPage extends State<PersonsDetailsPage> {
         title: "Movie Details",
         theme: ThemeData(primarySwatch: Colors.blueGrey),
         home: Scaffold(
-          floatingActionButton: SizedBox(
-            height: 70,
-            width: 70,
-            child: FloatingActionButton.small(
-              onPressed: () {
-                addToFavorites();
-              },
-              backgroundColor: Colors.blueGrey,
-              child: const Icon(
-                CupertinoIcons.heart_circle,
-                size: 40,
-              ),
-            ),
-          ),
           body: SingleChildScrollView(
             child: FutureBuilder<List<UiPerson>>(
               future: personsDetails,
@@ -141,6 +127,21 @@ class _PersonDetailsPage extends State<PersonsDetailsPage> {
           ),
           const SizedBox(height: 10),
           getLifeYears(),
+          const SizedBox(height: 10),
+          const Text(
+            "Biography:",
+            style: TextStyle(fontSize: 24),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            selectedPerson?.personDetails?.biography ?? "",
+            style: const TextStyle(fontSize: 16),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            "Known for:",
+            style: TextStyle(fontSize: 24),
+          ),
           const SizedBox(height: 10),
           listKnownMovies(persons)
         ],
