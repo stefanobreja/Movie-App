@@ -36,6 +36,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Movie>? popularMovies = [];
   int _selectedIndex = 0;
+  int _page = 1;
 
   @override
   void initState() {
@@ -53,9 +54,42 @@ class _MyHomePageState extends State<MyHomePage> {
     );
     var popularMoviesResult =
         await tmdb.v3.movies.getPopular() as Map<String, dynamic>;
+    var popularMoviesResultPage2 =
+        await tmdb.v3.movies.getPopular(page: 2) as Map<String, dynamic>;
+    var popularMoviesResultPage3 =
+        await tmdb.v3.movies.getPopular(page: 3) as Map<String, dynamic>;
+
+    var movies = MovieResponse.fromJson(popularMoviesResult);
+    var movies2 = MovieResponse.fromJson(popularMoviesResultPage2);
+    var movies3 = MovieResponse.fromJson(popularMoviesResultPage3);
+    var allMovies = movies.results;
+    if (movies2.results != null) {
+      allMovies?.addAll(movies2.results as Iterable<Movie>);
+    }
+    if (movies3.results != null) {
+      allMovies?.addAll(movies3.results as Iterable<Movie>);
+    }
+    setState(() {
+      popularMovies = allMovies;
+    });
+  }
+
+  loadMoreMovies() async {
+    _page += 1;
+    TMDB tmdb = TMDB(
+      ApiKeys(Constants.dbApiKey, Constants.dbApiReadingAccessToken),
+      logConfig: const ConfigLogger(
+        showLogs: true,
+        showErrorLogs: true,
+      ),
+    );
+    var popularMoviesResult =
+        await tmdb.v3.movies.getPopular(page: _page) as Map<String, dynamic>;
     var movies = MovieResponse.fromJson(popularMoviesResult);
     setState(() {
-      popularMovies = movies.results;
+      if (movies.results != null) {
+        popularMovies?.addAll(movies.results!);
+      }
     });
   }
 
@@ -97,23 +131,28 @@ class _MyHomePageState extends State<MyHomePage> {
             itemCount: popularMovies?.length,
             itemBuilder: (_, index) {
               var movie = popularMovies?.elementAt(index);
-              return InkWell(
-                onTap: () {
-                  openDetails(movie);
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 10),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                    image: DecorationImage(
-                      image: NetworkImage(getImage(index)),
-                      fit: BoxFit.cover,
+              if (index < popularMovies!.length) {
+                return InkWell(
+                  onTap: () {
+                    openDetails(movie);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      image: DecorationImage(
+                        image: NetworkImage(getImage(index)),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                ),
-              );
+                );
+              } else {
+                loadMoreMovies();
+                return const CircularProgressIndicator();
+              }
             }),
       ),
     );
@@ -149,10 +188,10 @@ class _MyHomePageState extends State<MyHomePage> {
       _selectedIndex = value;
       popularMovies?.clear();
     });
-    if(_selectedIndex == 0){
+    if (_selectedIndex == 0) {
       loadMovies();
     }
-    if(_selectedIndex == 1){
+    if (_selectedIndex == 1) {
       getMoviesFromDatabase();
     }
   }

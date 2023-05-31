@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:movie/Constants.dart';
@@ -81,6 +83,7 @@ class _DetailsPage extends State<DetailsPage> {
   @override
   Widget build(BuildContext context) {
     var movie = widget.detailsPageArguments.movie;
+    getMovieFromDb();
     return MaterialApp(
       title: "Movie Details",
       theme: ThemeData(primarySwatch: Colors.blueGrey),
